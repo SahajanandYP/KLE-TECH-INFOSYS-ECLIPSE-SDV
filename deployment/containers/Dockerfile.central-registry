@@ -1,0 +1,6 @@
+FROM python:3.10-slim
+WORKDIR /app
+COPY central_server/ /app/central_server/
+EXPOSE 8080
+ENV PYTHONPATH=/app
+CMD ["python3", "central_server/server.py", "8080"]

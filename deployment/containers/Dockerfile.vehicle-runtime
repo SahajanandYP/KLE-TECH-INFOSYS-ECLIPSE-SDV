@@ -1,0 +1,7 @@
+FROM python:3.10-slim
+WORKDIR /app
+COPY vehicle_adapters/ /app/vehicle_adapters/
+COPY vehicle_runtime/ /app/vehicle_runtime/
+COPY applications/ /app/applications/
+ENV PYTHONPATH=/app
+CMD ["python3", "vehicle_runtime/core/vehicle_daemon.py", "--id", "container-sdv-01", "--central-url", "http://central-server:8080"]

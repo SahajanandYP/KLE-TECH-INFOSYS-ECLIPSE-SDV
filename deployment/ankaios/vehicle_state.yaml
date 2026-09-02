@@ -1,0 +1,20 @@
+apiVersion: v0.1
+workloads:
+  kuksa-databroker:
+    runtime: podman
+    agent: agent_A
+    restartPolicy: ALWAYS
+    config:
+      image: ghcr.io/eclipse-kuksa/kuksa-databroker:main
+    controlInterfaceAccess:
+      allowRules:
+        - type: StateRule
+          operation: ReadWrite
+  vehicle-reporter:
+    runtime: podman
+    agent: agent_A
+    restartPolicy: ON_FAILURE
+    dependencies:
+      kuksa-databroker: ADD_COND_RUNNING
+    config:
+      image: ghcr.io/sdv-platform/vehicle-runtime:latest

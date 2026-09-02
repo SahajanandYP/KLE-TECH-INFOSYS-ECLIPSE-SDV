@@ -1,0 +1,4 @@
+# Zero external pip requirements needed for core platform execution (Python 3.10 standard library)
+# Optional enhancements:
+# kuksa-client>=0.4.0
+# eclipse-zenoh>=0.11.0

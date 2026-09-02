@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  central-server:
+    build:
+      context: ../../
+      dockerfile: deployment/containers/Dockerfile.central-registry
+    container_name: sdv-central-server
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    volumes:
+      - ../../central-server/registry:/app/central-server/registry
+
+  vehicle-node:
+    build:
+      context: ../../
+      dockerfile: deployment/containers/Dockerfile.vehicle-runtime
+    container_name: sdv-vehicle-node
+    depends_on:
+      - central-server
+    environment:
+      - CENTRAL_URL=http://central-server:8080
+    restart: unless-stopped
