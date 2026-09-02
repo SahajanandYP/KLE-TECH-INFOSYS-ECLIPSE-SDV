@@ -36,8 +36,15 @@ def run_onboarding_wizard():
     }
 
     vid, vname, bus_type, iface, bitrate = profile_names.get(choice, profile_names["1"])
+    print("\nStep 2: Fleet Connection")
+    hub_ip = input("Enter the Wi-Fi IP of your Jetson Hub (Leave blank for standalone/localhost): ").strip()
+    if not hub_ip:
+        hub_ip = "localhost"
+    hub_url = f"http://{hub_ip}:8080"
+
 
     config_data = {
+        "central_hub_url": hub_url,
         "vehicle_profile": {
             "id": vid,
             "name": vname,

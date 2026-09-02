@@ -147,5 +147,14 @@ class VehicleStack:
 
 if __name__ == "__main__":
     cfg_file = sys.argv[1] if len(sys.argv) > 1 else "config/vss_mapping.yaml"
-    stack = VehicleStack(config_path=cfg_file)
+    import yaml
+    hub_url = "http://localhost:8080"
+    try:
+        with open(cfg_file, 'r') as cf:
+            cfg = yaml.safe_load(cf)
+            if "central_hub_url" in cfg:
+                hub_url = cfg["central_hub_url"]
+    except:
+        pass
+    stack = VehicleStack(config_path=cfg_file, central_url=hub_url)
     stack.start(port=5000)
