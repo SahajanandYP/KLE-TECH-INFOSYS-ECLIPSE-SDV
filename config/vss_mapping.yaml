@@ -1,0 +1,62 @@
+# ==============================================================================
+# VEHICLE SIGNAL TO COVESA VSS MAPPING CONFIGURATION (One-Time Operator Setup)
+# ==============================================================================
+# Instructions:
+# 1. Specify your vehicle details below.
+# 2. Map your physical bus signals (CAN/Serial/ROS) to standardized COVESA VSS paths.
+# 3. Once saved, the SDV stack will automatically load this mapping on every boot.
+
+vehicle_profile:
+  id: "vehicle-apm-01"
+  name: "Target Autonomous Skateboard"
+  model: "APM-Skateboard-V1"
+  manufacturer: "VIRYA Mobility"
+  bus_type: "SocketCAN"
+  interface: "can0"
+  bitrate: 500000
+
+# Mapping rules: Source Signal -> Standard COVESA VSS Path
+signal_mappings:
+  - source_signal: "Vehicle_Speed_mps"
+    can_id_hex: "0x1291"
+    target_vss_path: "Vehicle.Speed"
+    scale: 3.6 # Convert m/s to km/h
+    unit: "km/h"
+
+  - source_signal: "Battery_Percentage"
+    can_id_hex: "0x1291"
+    target_vss_path: "Vehicle.Powertrain.TractionBattery.StateOfCharge.Current"
+    scale: 1.0
+    unit: "%"
+
+  - source_signal: "Drive_Mode"
+    can_id_hex: "0x1291"
+    target_vss_path: "Vehicle.Powertrain.Transmission.CurrentGear"
+    value_map:
+      0: 0   # Neutral
+      1: 1   # Forward / Drive
+      3: -1  # Reverse
+
+  - source_signal: "Emergency_Switch_Status"
+    can_id_hex: "0x1291"
+    target_vss_path: "Vehicle.Safety.EStopActive"
+    scale: 1.0
+    unit: "boolean"
+
+  - source_signal: "DBW_Mode"
+    can_id_hex: "0x1291"
+    target_vss_path: "Vehicle.AutomatedDriving.IsActive"
+    scale: 1.0
+    unit: "boolean"
+
+  - source_signal: "Steering_Angle_Deg"
+    can_id_hex: "0x1292"
+    target_vss_path: "Vehicle.Chassis.SteeringWheel.Angle"
+    scale: 1.0
+    unit: "deg"
+
+  - source_signal: "Door_Latch_State"
+    can_id_hex: "0x1295"
+    target_vss_path: "Vehicle.Cabin.Door.Row1.Left.IsOpen"
+    scale: 1.0
+    unit: "boolean"

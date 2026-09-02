@@ -1,0 +1,14 @@
+[Unit]
+Description=Eclipse SDV Autonomous Vehicle Stack (Auto-Run on Boot)
+After=network.target
+
+[Service]
+Type=simple
+User=nvidia
+WorkingDirectory=/home/nvidia/Desktop/Eclipse SDV
+ExecStart=/usr/bin/python3 /home/nvidia/Desktop/Eclipse SDV/vehicle_runtime/vehicle_stack.py /home/nvidia/Desktop/Eclipse SDV/config/vss_mapping.yaml
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
