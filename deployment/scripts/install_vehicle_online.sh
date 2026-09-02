@@ -21,3 +21,16 @@ echo "=== [4/4] Starting SDV Vehicle Stack ==="
 nohup python3 vehicle_runtime/vehicle_stack.py config/vss_mapping.yaml > /tmp/vehicle_sdv.log 2>&1 &
 
 echo "✅ Eclipse SDV Vehicle Stack installed and auto-running on boot!"
+
+echo "=== [5/5] Setting up Dashboard GUI Auto-Start on Boot ==="
+mkdir -p ~/.config/autostart
+cat << 'DESKTOP_EOF' > ~/.config/autostart/sdv-dashboard.desktop
+[Desktop Entry]
+Type=Application
+Exec=python3 "$(pwd)/dashboard/native_cluster.py"
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name=SDV Dashboard Cockpit
+DESKTOP_EOF
+echo "✅ Dashboard will now auto-open on the screen every time the vehicle boots!"

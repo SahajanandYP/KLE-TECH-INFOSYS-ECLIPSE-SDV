@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Eclipse SDV Remote</title>
+    <style>
+        body { margin: 0; padding: 0; background-color: #0A0E16; color: white; font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        .dashboard { text-align: center; margin-bottom: 40px; }
+        .speed { font-size: 80px; font-weight: bold; color: #00B4FF; }
+        .label { font-size: 14px; color: #6E7D91; text-transform: uppercase; letter-spacing: 2px; }
+        .lock-btn { width: 150px; height: 150px; border-radius: 50%; background: #121824; border: 4px solid #00E6D2; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: #00E6D2; cursor: pointer; transition: all 0.2s; box-shadow: 0 0 20px rgba(0, 230, 210, 0.2); }
+        .lock-btn:active { transform: scale(0.95); background: #00E6D2; color: #121824; }
+        .danger-btn { margin-top: 30px; padding: 15px 30px; background: #FF2E4C; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; width: 80%; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="speed" id="speed-display">0</div>
+        <div class="label">km/h</div>
+    </div>
+    
+    <div class="lock-btn" id="lock-btn" onclick="toggleLock()">LOCKED</div>
+    
+    <button class="danger-btn" onclick="triggerAEB()">⚠️ TRIGGER EMERGENCY BRAKE</button>
+
+    <script>
+        let isLocked = true;
+        function toggleLock() {
+            isLocked = !isLocked;
+            const btn = document.getElementById('lock-btn');
+            btn.innerText = isLocked ? "LOCKED" : "UNLOCKED";
+            btn.style.borderColor = isLocked ? "#00E6D2" : "#FFAB00";
+            btn.style.color = isLocked ? "#00E6D2" : "#FFAB00";
+            btn.style.boxShadow = isLocked ? "0 0 20px rgba(0, 230, 210, 0.2)" : "0 0 20px rgba(255, 171, 0, 0.2)";
+            alert(isLocked ? "Sent command: LOCK" : "Sent command: UNLOCK");
+        }
+        function triggerAEB() {
+            alert("COMMAND SENT: AEB (Emergency Brakes Engaged)");
+        }
+    </script>
+</body>
+</html>
