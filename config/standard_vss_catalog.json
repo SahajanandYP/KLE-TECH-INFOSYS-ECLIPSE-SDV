@@ -1,0 +1,72 @@
+{
+  "description": "Generalized Open-Source Automotive Bus to COVESA VSS Catalog",
+  "version": "4.0.0",
+  "standards_supported": [
+    "SAE_J1939",
+    "ISO_15031_OBD2",
+    "OPEN_EV_CAN",
+    "VIRYA_APM_DBC"
+  ],
+  "mappings": {
+    "OBD2_SPEED": {
+      "standard": "ISO_15031_OBD2",
+      "can_id_hex": "0x7E8",
+      "pid_hex": "0x0D",
+      "target_vss": "Vehicle.Speed",
+      "scale": 1.0,
+      "offset": 0.0,
+      "unit": "km/h"
+    },
+    "OBD2_ENGINE_RPM": {
+      "standard": "ISO_15031_OBD2",
+      "can_id_hex": "0x7E8",
+      "pid_hex": "0x0C",
+      "target_vss": "Vehicle.Powertrain.CombustionEngine.Speed",
+      "scale": 0.25,
+      "offset": 0.0,
+      "unit": "rpm"
+    },
+    "OBD2_BATTERY_VOLTAGE": {
+      "standard": "ISO_15031_OBD2",
+      "can_id_hex": "0x7E8",
+      "pid_hex": "0x42",
+      "target_vss": "Vehicle.Powertrain.TractionBattery.Voltage",
+      "scale": 0.001,
+      "offset": 0.0,
+      "unit": "V"
+    },
+    "J1939_CRUISE_SPEED": {
+      "standard": "SAE_J1939",
+      "pgn": 65265,
+      "spn": 84,
+      "can_id_hex": "0x18FEF100",
+      "target_vss": "Vehicle.Speed",
+      "scale": 0.00390625,
+      "unit": "km/h"
+    },
+    "J1939_ENGINE_TEMP": {
+      "standard": "SAE_J1939",
+      "pgn": 65262,
+      "spn": 110,
+      "can_id_hex": "0x18FEEE00",
+      "target_vss": "Vehicle.Powertrain.CombustionEngine.ECT",
+      "scale": 1.0,
+      "offset": -40.0,
+      "unit": "celsius"
+    },
+    "OPEN_EV_BATTERY_SOC": {
+      "standard": "OPEN_EV_CAN",
+      "can_id_hex": "0x1801E5F4",
+      "target_vss": "Vehicle.Powertrain.TractionBattery.StateOfCharge.Current",
+      "scale": 0.1,
+      "unit": "%"
+    },
+    "VIRYA_APM_GENERAL_STATUS": {
+      "standard": "VIRYA_APM_DBC",
+      "can_id_hex": "0x1291",
+      "target_vss": "Vehicle.Speed",
+      "scale": 3.6,
+      "unit": "km/h"
+    }
+  }
+}
