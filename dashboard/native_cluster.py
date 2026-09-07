@@ -33,8 +33,10 @@ class NativeDigitalCluster:
         self.width = width
         self.height = height
         
-        flags = pygame.DOUBLEBUF | pygame.RESIZABLE
-        self.screen = pygame.display.set_mode((self.width, self.height), flags)
+        # Open in FULLSCREEN automatically matching the physical monitor resolution
+        info = pygame.display.Info()
+        self.width, self.height = info.current_w, info.current_h
+        self.screen = pygame.display.set_mode((self.width, self.height), pygame.FULLSCREEN | pygame.DOUBLEBUF)
         pygame.display.set_caption("Eclipse SDV Minimalist Cluster")
         self.clock = pygame.time.Clock()
 
@@ -108,33 +110,52 @@ class NativeDigitalCluster:
                 pass
             time.sleep(0.05)
 
+    def get_alpha(self, t, start, end):
+        if t < start or t > end: return 0
+        duration = end - start
+        local_t = t - start
+        fade_time = 0.5
+        if local_t < fade_time:
+            return int((local_t / fade_time) * 255)
+        elif local_t > duration - fade_time:
+            return int(((duration - local_t) / fade_time) * 255)
+        return 255
+
     def draw_startup_splash(self, elapsed: float):
-        self.screen.fill((255, 255, 255))
+        self.screen.fill((0, 0, 0)) # Pure black background for cinematic effect
         center_x, center_y = self.width // 2, self.height // 2
 
-        if "eclipse" in self.logos:
-            ec_surf = self.logos["eclipse"]
-            self.screen.blit(ec_surf, (center_x - ec_surf.get_width() // 2, center_y - 120))
-        
-        pygame.draw.line(self.screen, (220, 220, 220), (center_x - 150, center_y), (center_x + 150, center_y), 1)
-
-        if "infosys" in self.logos:
-            inf_surf = self.logos["infosys"]
-            self.screen.blit(inf_surf, (center_x - inf_surf.get_width() - 20, center_y + 20))
+        # 0.0 - 2.0s: Eclipse SDV
+        if elapsed < 2.0 and "eclipse" in self.logos:
+            alpha = self.get_alpha(elapsed, 0.0, 2.0)
+            surf = self.logos["eclipse"].copy()
+            surf.set_alpha(alpha)
+            self.screen.blit(surf, (center_x - surf.get_width() // 2, center_y - surf.get_height() // 2))
             
-        if "kle" in self.logos:
-            kle_surf = self.logos["kle"]
-            self.screen.blit(kle_surf, (center_x + 20, center_y + 20))
+        # 2.0 - 4.0s: Infosys
+        elif 2.0 <= elapsed < 4.0 and "infosys" in self.logos:
+            alpha = self.get_alpha(elapsed, 2.0, 4.0)
+            surf = self.logos["infosys"].copy()
+            surf.set_alpha(alpha)
+            self.screen.blit(surf, (center_x - surf.get_width() // 2, center_y - surf.get_height() // 2))
+            
+        # 4.0 - 6.0s: KLE Tech
+        elif 4.0 <= elapsed < 6.0 and "kle" in self.logos:
+            alpha = self.get_alpha(elapsed, 4.0, 6.0)
+            surf = self.logos["kle"].copy()
+            surf.set_alpha(alpha)
+            self.screen.blit(surf, (center_x - surf.get_width() // 2, center_y - surf.get_height() // 2))
 
-        foot_surf = self.font_small.render("Initializing System...", True, (150, 150, 150))
+        # Persistent loading text
+        foot_surf = self.font_small.render("Initializing Software Defined Vehicle...", True, (100, 100, 100))
         self.screen.blit(foot_surf, (center_x - foot_surf.get_width() // 2, self.height - 80))
 
-        bar_w = int(min(200, (elapsed / 2.5) * 200))
-        pygame.draw.rect(self.screen, (240, 240, 240), (center_x - 100, self.height - 50, 200, 2))
+        bar_w = int(min(200, (elapsed / 6.0) * 200))
+        pygame.draw.rect(self.screen, (30, 30, 30), (center_x - 100, self.height - 50, 200, 2))
         pygame.draw.rect(self.screen, ACCENT_BLUE, (center_x - 100, self.height - 50, bar_w, 2))
 
     def draw_needle_sweep(self, elapsed: float):
-        t = (elapsed - 2.5) / 1.5
+        t = (elapsed - 6.0) / 1.5
         if t < 0.5:
             self.sweep_speed = (t / 0.5) * 60.0
         else:
@@ -239,9 +260,9 @@ class NativeDigitalCluster:
                             pass
 
             elapsed = time.time() - self.boot_start_time
-            if elapsed < 2.5:
+            if elapsed < 6.0:
                 self.draw_startup_splash(elapsed)
-            elif elapsed < 4.0:
+            elif elapsed < 7.5:
                 self.draw_needle_sweep(elapsed)
             else:
                 self.draw_cluster_view(display_speed=self.speed_kmh, sweep_mode=False)
