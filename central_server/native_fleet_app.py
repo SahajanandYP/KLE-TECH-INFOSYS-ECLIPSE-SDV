@@ -44,6 +44,11 @@ class FleetManagerApp:
                            bg="#5E81AC", fg="white", font=("Arial", 11, "bold"), 
                            command=self.push_ota_to_selected, relief=tk.FLAT, padx=15, pady=5)
         btn_ota.pack(side=tk.RIGHT)
+        
+        btn_diag = tk.Button(action_frame, text="🚨 RUN REMOTE DIAGNOSTICS (OpenSOVD)", 
+                           bg="#BF616A", fg="white", font=("Arial", 11, "bold"), 
+                           command=self.run_diagnostics, relief=tk.FLAT, padx=15, pady=5)
+        btn_diag.pack(side=tk.RIGHT, padx=10)
 
         self.tree.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
@@ -62,6 +67,36 @@ class FleetManagerApp:
             except Exception as e:
                 pass
             time.sleep(2)
+
+    def run_diagnostics(self):
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("No Selection", "Please select a vehicle first.")
+            return
+            
+        item = self.tree.item(selected[0])
+        vehicle_id = item['values'][1]
+        
+        ip = simpledialog.askstring("Remote Diagnostics", f"Enter Wi-Fi IP for {vehicle_id} to pull OpenSOVD Data:")
+        if not ip: return
+        
+        try:
+            req = urllib.request.Request(f"http://{ip.strip()}:5000/api/diagnostics/dtc")
+            with urllib.request.urlopen(req, timeout=3.0) as res:
+                import json
+                data = json.loads(res.read().decode())
+                
+                report = f"📋 OpenSOVD Diagnostic Report\n"
+                report += f"Vehicle: {data.get('vehicle_id')}\n"
+                report += f"Service Required: {'YES ⚠️' if data.get('service_required') else 'NO ✅'}\n\n"
+                report += "Active Diagnostic Trouble Codes (DTCs):\n"
+                
+                for dtc in data.get("codes", []):
+                    report += f"• [{dtc['code']}] {dtc['module']} - {dtc['description']}\n"
+                    
+                messagebox.showerror("Diagnostics Alert", report)
+        except Exception as e:
+            messagebox.showerror("Network Error", f"Could not reach OpenSOVD API: {e}")
 
     def push_ota_to_selected(self):
         selected = self.tree.selection()
