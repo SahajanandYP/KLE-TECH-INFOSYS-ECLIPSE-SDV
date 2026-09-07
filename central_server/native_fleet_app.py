@@ -36,6 +36,15 @@ class FleetManagerApp:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=120, anchor="center")
         
+        # Action Panel
+        action_frame = tk.Frame(root, bg="#2E3440")
+        action_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
+        
+        btn_ota = tk.Button(action_frame, text="🚀 PUSH OTA UPDATE TO SELECTED VEHICLE", 
+                           bg="#5E81AC", fg="white", font=("Arial", 11, "bold"), 
+                           command=self.push_ota_to_selected, relief=tk.FLAT, padx=15, pady=5)
+        btn_ota.pack(side=tk.RIGHT)
+
         self.tree.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
         # Auto-refresh loop
