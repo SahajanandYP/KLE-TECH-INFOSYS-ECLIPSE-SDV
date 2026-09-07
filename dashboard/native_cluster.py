@@ -48,6 +48,25 @@ class NativeDigitalCluster:
 
         # Fonts
         self.font_huge = pygame.font.SysFont("DejaVu Sans, Arial, Helvetica", 72, bold=True)
+        
+        # Load Logos for Splash Screen
+        self.logos = {}
+        try:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            img_eclipse = pygame.image.load(os.path.join(base_dir, "assets", "eclipse_sdv_logo.png")).convert_alpha()
+            img_infosys = pygame.image.load(os.path.join(base_dir, "assets", "infosys_logo.png")).convert_alpha()
+            img_kle = pygame.image.load(os.path.join(base_dir, "assets", "kle_logo.png")).convert_alpha()
+            
+            # Smoothscale them to appropriate width while maintaining aspect ratio
+            def scale_logo(img, target_width):
+                ratio = img.get_height() / img.get_width()
+                return pygame.transform.smoothscale(img, (target_width, int(target_width * ratio)))
+            
+            self.logos["eclipse"] = scale_logo(img_eclipse, 400)
+            self.logos["infosys"] = scale_logo(img_infosys, 220)
+            self.logos["kle"] = scale_logo(img_kle, 250)
+        except Exception as e:
+            print(f"Warning: Could not load logos: {e}")
         self.font_large = pygame.font.SysFont("DejaVu Sans, Arial, Helvetica", 52, bold=True)
         self.font_medium = pygame.font.SysFont("DejaVu Sans, Arial, Helvetica", 24, bold=True)
         self.font_small = pygame.font.SysFont("DejaVu Sans, Arial, Helvetica", 16)
@@ -87,29 +106,39 @@ class NativeDigitalCluster:
             time.sleep(0.05)
 
     def draw_startup_splash(self, elapsed: float):
-        """Draws OEM Brand Startup Screen with Eclipse SDV, Infosys, and KLE Tech."""
-        self.screen.fill((5, 8, 14))
-        alpha_factor = min(1.0, elapsed / 1.0) if elapsed < 2.0 else max(0.0, 1.0 - (elapsed - 2.0) / 0.5)
+        """Draws OEM Brand Startup Screen with physical Eclipse SDV, Infosys, and KLE Tech logos."""
+        # White background for crisp logo display
+        self.screen.fill((255, 255, 255))
+        
+        center_x = self.width // 2
+        center_y = self.height // 2
 
-        # Draw Center Glow Circle
-        pygame.draw.circle(self.screen, (15, 30, 55), (self.width // 2, self.height // 2 - 30), 180)
-        pygame.draw.circle(self.screen, (0, 100, 180), (self.width // 2, self.height // 2 - 30), 180, 2)
+        # Eclipse SDV Logo (Top Center)
+        if "eclipse" in getattr(self, "logos", {}):
+            ec_surf = self.logos["eclipse"]
+            self.screen.blit(ec_surf, (center_x - ec_surf.get_width() // 2, center_y - 140))
+        
+        # Divider Line
+        pygame.draw.line(self.screen, (200, 200, 200), (center_x - 200, center_y - 10), (center_x + 200, center_y - 10), 2)
 
-        # Eclipse SDV Header
-        e_surf = self.font_large.render("ECLIPSE SDV", True, TEXT_WHITE)
-        self.screen.blit(e_surf, (self.width // 2 - e_surf.get_width() // 2, self.height // 2 - 80))
+        # Infosys Logo (Bottom Left)
+        if "infosys" in getattr(self, "logos", {}):
+            inf_surf = self.logos["infosys"]
+            self.screen.blit(inf_surf, (center_x - inf_surf.get_width() - 30, center_y + 10))
+            
+        # KLE Tech Logo (Bottom Right)
+        if "kle" in getattr(self, "logos", {}):
+            kle_surf = self.logos["kle"]
+            # Align KLE logo vertically with Infosys
+            self.screen.blit(kle_surf, (center_x + 30, center_y + 10))
 
-        # Infosys & KLE Tech Subtitle
-        sub_surf = self.font_medium.render("INFOSYS  ×  KLE TECH", True, ACCENT_CYAN)
-        self.screen.blit(sub_surf, (self.width // 2 - sub_surf.get_width() // 2, self.height // 2 - 10))
+        # Loading text & bar (Dark text on white bg)
+        foot_surf = self.font_small.render("Software Defined Vehicle Cockpit Platform • Initializing...", True, (100, 100, 100))
+        self.screen.blit(foot_surf, (center_x - foot_surf.get_width() // 2, self.height - 110))
 
-        foot_surf = self.font_small.render("Software Defined Vehicle Cockpit Platform • Initializing...", True, TEXT_MUTED)
-        self.screen.blit(foot_surf, (self.width // 2 - foot_surf.get_width() // 2, self.height // 2 + 50))
-
-        # Bottom loading bar
         bar_w = int(min(300, (elapsed / 2.5) * 300))
-        pygame.draw.rect(self.screen, (30, 40, 60), (self.width // 2 - 150, self.height - 80, 300, 6), border_radius=3)
-        pygame.draw.rect(self.screen, ACCENT_CYAN, (self.width // 2 - 150, self.height - 80, bar_w, 6), border_radius=3)
+        pygame.draw.rect(self.screen, (220, 220, 220), (center_x - 150, self.height - 80, 300, 6), border_radius=3)
+        pygame.draw.rect(self.screen, (0, 122, 255), (center_x - 150, self.height - 80, bar_w, 6), border_radius=3)
 
     def draw_needle_sweep(self, elapsed: float):
         """Simulates authentic automotive gauge sweep (0 -> 60 -> 0 km/h) & warning self-test."""
