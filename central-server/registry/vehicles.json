@@ -1,0 +1,66 @@
+{
+  "virya-apm-01": {
+    "vehicle_id": "virya-apm-01",
+    "name": "VIRYA APM Skateboard",
+    "model": "SDV-Production-2026",
+    "vehicle_type": "Autonomous Skateboard",
+    "manufacturer": "Eclipse SDV Partner",
+    "status": "ONLINE",
+    "first_registered": "2026-09-07T09:35:12.635049+00:00",
+    "last_seen": "2026-09-07T11:35:14.299396+00:00",
+    "network_endpoint": "http://localhost:5000",
+    "hardware_profile": {
+      "vehicle_id": "virya-apm-01",
+      "name": "VIRYA APM Skateboard",
+      "model": "SDV-Production-2026",
+      "vehicle_type": "Autonomous Skateboard",
+      "manufacturer": "Eclipse SDV Partner",
+      "max_speed_kmh": 54.0,
+      "battery_capacity_kwh": 5.2,
+      "communication_bus": "SocketCAN (can0)",
+      "extra_specs": {}
+    },
+    "software_inventory": {
+      "sdv_platform_version": "v1.1.0",
+      "adapter_name": "SocketCAN-adapter",
+      "adapter_version": "v1.0.0",
+      "kuksa_broker_version": "v0.4.1",
+      "os_kernel": "7.0.0-30-generic",
+      "cpu_arch": "x86_64",
+      "active_workloads": [
+        "kuksa-databroker",
+        "companion-app",
+        "telemetry-app",
+        "opensovd-app",
+        "aeb-app",
+        "ota-manager"
+      ],
+      "ota_target_version": null
+    },
+    "current_state_snapshot": {
+      "timestamp": "2026-09-07T11:35:14.289694+00:00",
+      "is_online": true,
+      "speed_kmh": 0.0,
+      "drive_mode": "NEUTRAL",
+      "current_gear": 0,
+      "battery_soc_percent": 100.0,
+      "autonomous_active": false,
+      "emergency_stop_active": false,
+      "interlock_engaged": false,
+      "charging_connected": false,
+      "active_dtcs": [],
+      "raw_vss_signals": {
+        "Vehicle.Speed": 0.0,
+        "Vehicle.Powertrain.Transmission.CurrentGear": 0,
+        "Vehicle.Powertrain.Transmission.DriveMode": "NEUTRAL",
+        "Vehicle.Powertrain.TractionBattery.StateOfCharge.Current": 100.0,
+        "Vehicle.AutomatedDriving.IsActive": false,
+        "Vehicle.Safety.EStopActive": false,
+        "Vehicle.Safety.InterlockEngaged": false,
+        "Vehicle.Powertrain.TractionBattery.Charging.IsConnected": false
+      }
+    },
+    "active_dtcs": [],
+    "metadata": {}
+  }
+}
