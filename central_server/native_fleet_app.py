@@ -72,26 +72,16 @@ class FleetManagerApp:
         item = self.tree.item(selected[0])
         vehicle_id = item['values'][1]  # Vehicle ID is the second column
         
-        # Ask for IP manually since they haven't pulled the fix on the skateboard yet
-        ip = simpledialog.askstring("Push OTA", f"Enter the Wi-Fi IP Address for {vehicle_id} (e.g., 192.168.1.50):")
-        if not ip:
-            return
-            
-        endpoint = f"http://{ip.strip()}:5000"
-        
+        import subprocess
+        import os
         try:
-            req = urllib.request.Request(f"{endpoint}/api/ota/trigger", method="POST")
-            req.add_header('Content-Type', 'application/json')
-            payload = json.dumps({"target_version": "v2.0-OTA"}).encode('utf-8')
-            
-            with urllib.request.urlopen(req, data=payload, timeout=5.0) as res:
-                data = json.loads(res.read().decode())
-                if data.get("success"):
-                    messagebox.showinfo("OTA Pushed!", f"Success! The driver inside {vehicle_id} is now being prompted to install the update.")
-                else:
-                    messagebox.showerror("Failed", "Vehicle rejected the update request.")
+            # We call the external python script so we don't have to import zenoh globally if it's missing on the UI thread
+            repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            script = os.path.join(repo_dir, "central_server", "push_ota.py")
+            subprocess.Popen([sys.executable, script, vehicle_id])
+            messagebox.showinfo("Zenoh OTA Broadcast", f"OTA signal securely broadcasted to the cloud topic for {vehicle_id} (No IP required!).\n\nThe vehicle will pick it up automatically.")
         except Exception as e:
-            messagebox.showerror("Network Error", f"Failed to reach vehicle at {endpoint}\nError: {e}")
+            messagebox.showerror("Error", f"Failed to run Zenoh broadcast: {e}")
 
     def refresh_table(self, data):
         # Clear existing rows
