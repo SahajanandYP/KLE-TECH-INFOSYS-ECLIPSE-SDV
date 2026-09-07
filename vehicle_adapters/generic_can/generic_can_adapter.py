@@ -71,8 +71,11 @@ class GenericCanAdapter(BaseVehicleAdapter):
             else:
                 can_id = can_id & 0x7FF
             
-            # Match Proprietary B - General Status (0x1291 or 4753 in decimal)
-            if can_id == 0x1291:
+            # Match Proprietary B - General Status
+            # The PDF manual says PGN: "0x1291 0109". This could be a full 29-bit ID (0x12910109) 
+            # or a J1939 PGN (0x1291). We check all possibilities to be bulletproof.
+            pgn = (can_id >> 8) & 0x3FFFF
+            if can_id == 0x1291 or can_id == 0x12910109 or pgn == 0x1291:
                 # B0 - Drive Mode (0x01=Forward, 0x03=Reverse, 0x00=Neutral)
                 d_mode = data[0]
                 if d_mode == 0x01:
