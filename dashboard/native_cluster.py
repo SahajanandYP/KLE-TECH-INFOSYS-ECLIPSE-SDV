@@ -247,11 +247,19 @@ class NativeDigitalCluster:
     def run(self):
         while self.is_running:
             for event in pygame.event.get():
-                if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                if event.type == pygame.QUIT:
                     self.is_running = False
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
-                    if self.ota_available and not self.ota_installing:
-                        self.ota_installing = True
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        if self.ota_available and self.show_ota_banner:
+                            self.show_ota_banner = False
+                            self.ota_was_dismissed = True
+                        else:
+                            self.is_running = False
+                    elif event.key == pygame.K_RETURN:
+                        if self.ota_available and not self.ota_installing:
+                            self.show_ota_banner = False
+                            self.ota_installing = True
                         try:
                             req = urllib.request.Request(self.vehicle_api_url.replace("/telemetry", "/ota/approve"), method="POST")
                             req.add_header('Content-Type', 'application/json')
