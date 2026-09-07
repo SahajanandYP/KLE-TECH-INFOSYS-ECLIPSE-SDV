@@ -51,7 +51,11 @@ class VehicleStackApiHandler(BaseHTTPRequestHandler):
         elif path == "/api/diagnostics/sovd":
             self._send_json(200, self.stack.diagnostics_app.get_sovd_diagnostics())
         elif path == "/api/ota/status":
-            self._send_json(200, {"current_version": self.stack.ota_app.current_version, "state": self.stack.ota_app.update_state})
+            self._send_json(200, {
+                "current_version": self.stack.ota_app.current_version, 
+                "state": self.stack.ota_app.update_state,
+                "update_available": getattr(self.stack.ota_app, 'update_available', False)
+            })
         else:
             self._send_json(404, {"error": "Not found"})
 
@@ -70,10 +74,15 @@ class VehicleStackApiHandler(BaseHTTPRequestHandler):
             triggered, msg = self.stack.aeb_app.process_obstacle_telemetry(dist)
             self._send_json(200, {"aeb_triggered": triggered, "message": msg})
         elif path == "/api/ota/trigger":
-            target = body.get("target_version", "v1.2.0")
+            target = body.get("target_version", "latest")
+            self.stack.ota_app.notify_update_available(target)
+            self._send_json(200, {"success": True, "message": "Notification sent to driver for approval."})
+        elif path == "/api/ota/approve":
             health_pass = bool(body.get("health_check_pass", True))
-            success, msg = self.stack.ota_app.apply_ota_update(target, health_pass)
-            self._send_json(200, {"success": success, "message": msg, "version": self.stack.ota_app.current_version})
+            # Run this in a background thread so the HTTP response can return before os.execv kills the process!
+            import threading
+            threading.Thread(target=self.stack.ota_app.apply_ota_update, args=(health_pass,)).start()
+            self._send_json(200, {"success": True, "message": "Update approved and installing in background."})
         else:
             self._send_json(404, {"error": "Not found"})
 

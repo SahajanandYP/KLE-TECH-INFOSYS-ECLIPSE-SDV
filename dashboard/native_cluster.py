@@ -79,6 +79,8 @@ class NativeDigitalCluster:
         self.steering_angle = 0.0
         self.dbw_active = True
         self.estop_active = False
+        self.ota_available = False
+        self.ota_installing = False
         self.is_running = True
         self.boot_phase = "SPLASH" # "SPLASH" -> "SWEEP" -> "READY"
         self.boot_start_time = time.time()
@@ -207,6 +209,18 @@ class NativeDigitalCluster:
             warn_surf = self.font_medium.render("⚠ EMERGENCY STOP SWITCH ENGAGED - DRIVE INHIBITED ⚠", True, TEXT_WHITE)
             self.screen.blit(warn_surf, (self.width // 2 - warn_surf.get_width() // 2, self.height - 40))
 
+        # OTA Update Prompt
+        if self.ota_installing:
+            banner_rect = pygame.Rect(0, self.height - 50, self.width, 50)
+            pygame.draw.rect(self.screen, (0, 122, 255), banner_rect)
+            warn_surf = self.font_medium.render("⬇ INSTALLING SOFTWARE UPDATE... DO NOT TURN OFF VEHICLE ⬇", True, TEXT_WHITE)
+            self.screen.blit(warn_surf, (self.width // 2 - warn_surf.get_width() // 2, self.height - 40))
+        elif self.ota_available and not sweep_mode:
+            banner_rect = pygame.Rect(0, self.height - 50, self.width, 50)
+            pygame.draw.rect(self.screen, (255, 171, 0), banner_rect)
+            warn_surf = self.font_medium.render("⭐ NEW OTA UPDATE AVAILABLE. PRESS [ENTER] TO INSTALL ⭐", True, (10, 14, 22))
+            self.screen.blit(warn_surf, (self.width // 2 - warn_surf.get_width() // 2, self.height - 40))
+
     def draw_battery_panel(self, x: int, y: int, w: int, h: int):
         pygame.draw.rect(self.screen, PANEL_COLOR, (x, y, w, h), border_radius=12)
         pygame.draw.rect(self.screen, (35, 45, 65), (x, y, w, h), 2, border_radius=12)
@@ -241,6 +255,16 @@ class NativeDigitalCluster:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                     self.is_running = False
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                    if self.ota_available and not self.ota_installing:
+                        self.ota_installing = True
+                        try:
+                            # Approve OTA over the local API
+                            req = urllib.request.Request(self.vehicle_api_url.replace("/telemetry", "/ota/approve"), method="POST")
+                            req.add_header('Content-Type', 'application/json')
+                            urllib.request.urlopen(req, data=b'{}', timeout=1.0)
+                        except Exception as e:
+                            print(f"OTA approval failed: {e}")
 
             now = time.time()
             elapsed = now - self.boot_start_time

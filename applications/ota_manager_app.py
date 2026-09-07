@@ -1,7 +1,7 @@
 
 """
 Use Case 4: Remote OTA Manager & Automated Rollback Engine
-Now with REAL Git-based Over-The-Air updates.
+Now with REAL Git-based Over-The-Air updates and User Approval.
 """
 
 import logging
@@ -18,10 +18,25 @@ class OtaManagerApp:
         self.current_version = current_version
         self.stable_version = current_version
         self.update_state = "IDLE"
+        self.update_available = False
+        self.pending_target = None
 
-    def apply_ota_update(self, target_version: str = "latest", simulate_post_install_health_pass: bool = True) -> Tuple[bool, str]:
-        """Executes a REAL OTA update by pulling from GitHub and restarting the process."""
-        logger.info(f"OTA Triggered: Pulling latest code from GitHub (Current: {self.current_version})")
+    def notify_update_available(self, target_version: str = "latest"):
+        """Receives signal from cloud that update is ready. Waits for user approval."""
+        self.update_available = True
+        self.pending_target = target_version
+        self.update_state = "PENDING_APPROVAL"
+        logger.info(f"OTA Notification: Update {target_version} is available. Waiting for driver approval...")
+
+    def apply_ota_update(self, simulate_post_install_health_pass: bool = True) -> Tuple[bool, str]:
+        """Executes a REAL OTA update after driver approves it."""
+        if not self.update_available:
+            return False, "No update pending."
+            
+        target_version = self.pending_target or "latest"
+        logger.info(f"OTA Approved by Driver! Pulling latest code from GitHub (Current: {self.current_version})")
+        
+        self.update_available = False
         self.update_state = "DOWNLOADING"
         
         try:
@@ -40,7 +55,6 @@ class OtaManagerApp:
                 time.sleep(3)
                 
                 # 2. Automatically restart the Python software stack to apply the new code!
-                # This gracefully reboots the vehicle software without turning off the computer
                 os.execv(sys.executable, ['python3'] + sys.argv)
                 return True, "Update applied."
             else:
