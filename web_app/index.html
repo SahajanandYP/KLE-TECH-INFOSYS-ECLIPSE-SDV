@@ -22,6 +22,16 @@
     </style>
 </head>
 <body>
+    <!-- Bluetooth Pairing Overlay -->
+    <div id="bt-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <h2 style="color: #0070F3; margin-bottom: 40px;">Virya Digital Key</h2>
+        <div style="font-size: 60px; margin-bottom: 40px;">🛹</div>
+        <p style="color: #888; margin-bottom: 30px; text-align: center; width: 80%;">Vehicle must be in range to establish a secure Bluetooth connection.</p>
+        <button onclick="connectBluetooth()" style="padding: 15px 40px; background: #0070F3; color: white; border: none; border-radius: 25px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 0 20px rgba(0, 112, 243, 0.4);">
+            PAIR VIA BLUETOOTH
+        </button>
+    </div>
+
     <div class="dashboard">
         <div class="speed" id="speed-display">--</div>
         <div class="label">km/h</div>
@@ -39,7 +49,28 @@
     <div class="status-bar" id="connection-status">Connecting to vehicle...</div>
 
     <script>
-        // Dynamically point to the Skateboard's API (port 5000) based on the URL the phone used to access this page
+        // Web Bluetooth API Integration
+        async function connectBluetooth() {
+            try {
+                // This triggers the Native Android/iOS Bluetooth Pairing Screen!
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true
+                });
+                
+                console.log("Bluetooth paired to: " + device.name);
+                document.getElementById('bt-overlay').style.display = 'none';
+                document.getElementById('connection-status').innerText = `🔵 Bluetooth Connected: ${device.name}`;
+                document.getElementById('connection-status').style.color = "#0070F3";
+                
+                // Start telemetry loop only AFTER Bluetooth is paired
+                startTelemetryLoop();
+            } catch (err) {
+                console.error(err);
+                alert("Bluetooth connection cancelled or failed.");
+            }
+        }
+
+        // Dynamically point to the Skateboard's API (port 5000)
         const API_URL = `http://${window.location.hostname}:5000/api`;
         
         let isLocked = true;
@@ -81,8 +112,9 @@
             .catch(err => alert("Failed to reach vehicle API"));
         }
 
-        // Live Telemetry Loop
-        setInterval(() => {
+        // Live Telemetry Loop (Started after BT pairing)
+        function startTelemetryLoop() {
+            setInterval(() => {
             fetch(`${API_URL}/telemetry`)
                 .then(res => res.json())
                 .then(data => {
@@ -95,7 +127,8 @@
                     document.getElementById('connection-status').innerText = "🔴 Disconnected";
                     document.getElementById('connection-status').style.color = "#FF3366";
                 });
-        }, 500); // 2 FPS update on mobile
+            }, 500); // 2 FPS update on mobile
+        }
     </script>
 </body>
 </html>
