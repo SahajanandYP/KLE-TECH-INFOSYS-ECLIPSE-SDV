@@ -63,9 +63,42 @@ class GenericCanAdapter(BaseVehicleAdapter):
         try:
             cf, _ = self.can_socket.recvfrom(16)
             can_id, can_dlc, data = struct.unpack("<IB3x8s", cf)
-            can_id = can_id & 0x1FFFFFFF if (can_id & socket.CAN_EFF_FLAG) else (can_id & 0x7FF)
-            # Custom hook or mapper can process raw frame
-            # Update latest VSS
+            
+            # Mask out the 29-bit identifier properly (EFF flag is bit 31)
+            is_extended = bool(can_id & 0x80000000)
+            if is_extended:
+                can_id = can_id & 0x1FFFFFFF
+            else:
+                can_id = can_id & 0x7FF
+            
+            # Match Proprietary B - General Status (0x1291 or 4753 in decimal)
+            if can_id == 0x1291:
+                # B0 - Drive Mode (0x01=Forward, 0x03=Reverse, 0x00=Neutral)
+                d_mode = data[0]
+                if d_mode == 0x01:
+                    self.latest_vss["Vehicle.Powertrain.Transmission.CurrentGear"] = 1
+                    self.latest_vss["Vehicle.Powertrain.Transmission.DriveMode"] = "DRIVE"
+                elif d_mode == 0x03:
+                    self.latest_vss["Vehicle.Powertrain.Transmission.CurrentGear"] = -1
+                    self.latest_vss["Vehicle.Powertrain.Transmission.DriveMode"] = "REVERSE"
+                else:
+                    self.latest_vss["Vehicle.Powertrain.Transmission.CurrentGear"] = 0
+                    self.latest_vss["Vehicle.Powertrain.Transmission.DriveMode"] = "NEUTRAL"
+                    
+                # B4 - Vehicle Status Flags
+                status_bits = data[4]
+                self.latest_vss["Vehicle.AutomatedDriving.IsActive"] = bool(status_bits & 0x01)
+                self.latest_vss["Vehicle.Safety.EStopActive"] = bool(status_bits & 0x10)
+                
+                # B5 - Battery Percentage
+                self.latest_vss["Vehicle.Powertrain.TractionBattery.StateOfCharge.Current"] = float(data[5])
+                
+                # B6-B7 - Vehicle Speed in mps (Speed * 0.01). Convert to km/h!
+                # LSB is B6, MSB is B7
+                speed_raw = data[6] | (data[7] << 8)
+                speed_mps = speed_raw * 0.01
+                self.latest_vss["Vehicle.Speed"] = speed_mps * 3.6
+                
         except socket.timeout:
             pass
         except Exception as e:
