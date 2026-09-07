@@ -1,10 +1,6 @@
+
 """
-Native Digital Instrument Cluster Dashboard (NO Browser / NO HTML)
-Hardware-accelerated native embedded automotive cluster running directly on display (HDMI/eDP).
-Features:
-1. Automotive Boot Sequence: Splash Screen with Eclipse SDV, Infosys, and KLE Tech branding.
-2. Gauge Needle Sweep & Warning Light Self-Test (0 -> 60 -> 0 km/h).
-3. Live 60 FPS Real-time cluster subscribing to local KUKSA VSS broker.
+Native Digital Instrument Cluster Dashboard - Sleek Vercel Minimalist Design
 """
 
 import sys
@@ -16,24 +12,20 @@ import json
 import threading
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-
 import pygame
 
 os.environ["SDL_VIDEO_ALLOW_SCREENSAVER"] = "1"
 pygame.init()
 
-# Automotive Color Palette
-BG_COLOR = (10, 14, 22)
-PANEL_COLOR = (18, 24, 36)
-ACCENT_BLUE = (0, 180, 255)
-ACCENT_CYAN = (0, 230, 210)
-ACCENT_GREEN = (0, 230, 118)
-ACCENT_RED = (255, 46, 76)
-ACCENT_AMBER = (255, 171, 0)
-TEXT_WHITE = (240, 244, 248)
-TEXT_MUTED = (110, 125, 145)
-INFOSYS_BLUE = (0, 122, 255)
-KLE_NAVY = (14, 43, 92)
+# Vercel / Tesla Minimalist Palette
+BG_COLOR = (0, 0, 0)
+PANEL_COLOR = (10, 10, 10)
+ACCENT_BLUE = (0, 112, 243)  # Vercel Blue
+ACCENT_CYAN = (50, 205, 255)
+ACCENT_GREEN = (0, 204, 102)
+ACCENT_RED = (255, 51, 102)
+TEXT_WHITE = (237, 237, 237)
+TEXT_MUTED = (136, 136, 136)
 
 class NativeDigitalCluster:
     def __init__(self, vehicle_api_url: str = "http://localhost:5000/api/telemetry", width: int = 1024, height: int = 600):
@@ -43,12 +35,16 @@ class NativeDigitalCluster:
         
         flags = pygame.DOUBLEBUF | pygame.RESIZABLE
         self.screen = pygame.display.set_mode((self.width, self.height), flags)
-        pygame.display.set_caption("Eclipse SDV Native Instrument Cluster")
+        pygame.display.set_caption("Eclipse SDV Minimalist Cluster")
         self.clock = pygame.time.Clock()
 
-        # Fonts
-        self.font_huge = pygame.font.SysFont("DejaVu Sans, Arial, Helvetica", 72, bold=True)
-        
+        # Fonts (Sleek sans-serif)
+        self.font_huge = pygame.font.SysFont("sans-serif", 140, bold=False)
+        self.font_large = pygame.font.SysFont("sans-serif", 48, bold=False)
+        self.font_medium = pygame.font.SysFont("sans-serif", 24, bold=False)
+        self.font_small = pygame.font.SysFont("sans-serif", 18, bold=False)
+        self.font_tiny = pygame.font.SysFont("sans-serif", 12, bold=False)
+
         # Load Logos for Splash Screen
         self.logos = {}
         try:
@@ -57,46 +53,51 @@ class NativeDigitalCluster:
             img_infosys = pygame.image.load(os.path.join(base_dir, "assets", "infosys_logo.png")).convert_alpha()
             img_kle = pygame.image.load(os.path.join(base_dir, "assets", "kle_logo.png")).convert_alpha()
             
-            # Smoothscale them to appropriate width while maintaining aspect ratio
             def scale_logo(img, target_width):
                 ratio = img.get_height() / img.get_width()
                 return pygame.transform.smoothscale(img, (target_width, int(target_width * ratio)))
             
-            self.logos["eclipse"] = scale_logo(img_eclipse, 400)
-            self.logos["infosys"] = scale_logo(img_infosys, 220)
-            self.logos["kle"] = scale_logo(img_kle, 250)
+            self.logos["eclipse"] = scale_logo(img_eclipse, 250)
+            self.logos["infosys"] = scale_logo(img_infosys, 140)
+            self.logos["kle"] = scale_logo(img_kle, 160)
         except Exception as e:
-            print(f"Warning: Could not load logos: {e}")
-        self.font_large = pygame.font.SysFont("DejaVu Sans, Arial, Helvetica", 52, bold=True)
-        self.font_medium = pygame.font.SysFont("DejaVu Sans, Arial, Helvetica", 24, bold=True)
-        self.font_small = pygame.font.SysFont("DejaVu Sans, Arial, Helvetica", 16)
-        self.font_tiny = pygame.font.SysFont("DejaVu Sans, Arial, Helvetica", 13)
+            pass
 
-        # Vehicle State Cache
         self.speed_kmh = 0.0
         self.battery_soc = 85.0
         self.gear = 1
         self.steering_angle = 0.0
-        self.dbw_active = True
+        self.dbw_active = False
         self.estop_active = False
         self.ota_available = False
         self.ota_installing = False
-        self.is_running = True
-        self.boot_phase = "SPLASH" # "SPLASH" -> "SWEEP" -> "READY"
+        
         self.boot_start_time = time.time()
+        self.is_running = True
         self.sweep_speed = 0.0
 
-        # Start telemetry thread
-        self.poll_thread = threading.Thread(target=self._telemetry_poll_loop, daemon=True)
-        self.poll_thread.start()
+        threading.Thread(target=self.fetch_telemetry, daemon=True).start()
 
-    def _telemetry_poll_loop(self):
+    def fetch_telemetry(self):
         while self.is_running:
             try:
-                req = urllib.request.Request(self.vehicle_api_url, headers={"User-Agent": "SDV-Cluster"})
-                with urllib.request.urlopen(req, timeout=0.5) as resp:
-                    if resp.status == 200:
-                        data = json.loads(resp.read().decode("utf-8"))
+                req = urllib.request.Request(self.vehicle_api_url)
+                with urllib.request.urlopen(req, timeout=0.5) as response:
+                    data = {}
+                    try:
+                        data = json.loads(response.read().decode())
+                    except:
+                        pass
+                    
+                    try:
+                        req2 = urllib.request.Request(self.vehicle_api_url.replace("/telemetry", "/ota/status"))
+                        with urllib.request.urlopen(req2, timeout=0.5) as r2:
+                            d2 = json.loads(r2.read().decode())
+                            self.ota_available = bool(d2.get("update_available", False))
+                    except:
+                        pass
+
+                    if isinstance(data, dict):
                         self.speed_kmh = float(data.get("speed_kmh", 0.0))
                         self.battery_soc = float(data.get("battery_soc_percent", 85.0))
                         self.gear = int(data.get("gear", 1))
@@ -108,147 +109,119 @@ class NativeDigitalCluster:
             time.sleep(0.05)
 
     def draw_startup_splash(self, elapsed: float):
-        """Draws OEM Brand Startup Screen with physical Eclipse SDV, Infosys, and KLE Tech logos."""
-        # White background for crisp logo display
         self.screen.fill((255, 255, 255))
-        
-        center_x = self.width // 2
-        center_y = self.height // 2
+        center_x, center_y = self.width // 2, self.height // 2
 
-        # Eclipse SDV Logo (Top Center)
-        if "eclipse" in getattr(self, "logos", {}):
+        if "eclipse" in self.logos:
             ec_surf = self.logos["eclipse"]
-            self.screen.blit(ec_surf, (center_x - ec_surf.get_width() // 2, center_y - 140))
+            self.screen.blit(ec_surf, (center_x - ec_surf.get_width() // 2, center_y - 120))
         
-        # Divider Line
-        pygame.draw.line(self.screen, (200, 200, 200), (center_x - 200, center_y - 10), (center_x + 200, center_y - 10), 2)
+        pygame.draw.line(self.screen, (220, 220, 220), (center_x - 150, center_y), (center_x + 150, center_y), 1)
 
-        # Infosys Logo (Bottom Left)
-        if "infosys" in getattr(self, "logos", {}):
+        if "infosys" in self.logos:
             inf_surf = self.logos["infosys"]
-            self.screen.blit(inf_surf, (center_x - inf_surf.get_width() - 30, center_y + 10))
+            self.screen.blit(inf_surf, (center_x - inf_surf.get_width() - 20, center_y + 20))
             
-        # KLE Tech Logo (Bottom Right)
-        if "kle" in getattr(self, "logos", {}):
+        if "kle" in self.logos:
             kle_surf = self.logos["kle"]
-            # Align KLE logo vertically with Infosys
-            self.screen.blit(kle_surf, (center_x + 30, center_y + 10))
+            self.screen.blit(kle_surf, (center_x + 20, center_y + 20))
 
-        # Loading text & bar (Dark text on white bg)
-        foot_surf = self.font_small.render("Software Defined Vehicle Cockpit Platform • Initializing...", True, (100, 100, 100))
-        self.screen.blit(foot_surf, (center_x - foot_surf.get_width() // 2, self.height - 110))
+        foot_surf = self.font_small.render("Initializing System...", True, (150, 150, 150))
+        self.screen.blit(foot_surf, (center_x - foot_surf.get_width() // 2, self.height - 80))
 
-        bar_w = int(min(300, (elapsed / 2.5) * 300))
-        pygame.draw.rect(self.screen, (220, 220, 220), (center_x - 150, self.height - 80, 300, 6), border_radius=3)
-        pygame.draw.rect(self.screen, (0, 122, 255), (center_x - 150, self.height - 80, bar_w, 6), border_radius=3)
+        bar_w = int(min(200, (elapsed / 2.5) * 200))
+        pygame.draw.rect(self.screen, (240, 240, 240), (center_x - 100, self.height - 50, 200, 2))
+        pygame.draw.rect(self.screen, ACCENT_BLUE, (center_x - 100, self.height - 50, bar_w, 2))
 
     def draw_needle_sweep(self, elapsed: float):
-        """Simulates authentic automotive gauge sweep (0 -> 60 -> 0 km/h) & warning self-test."""
-        # 1.5 second sweep up and down
-        t = (elapsed - 2.5) / 1.5 # 0.0 to 1.0
+        t = (elapsed - 2.5) / 1.5
         if t < 0.5:
             self.sweep_speed = (t / 0.5) * 60.0
         else:
             self.sweep_speed = (1.0 - (t - 0.5) / 0.5) * 60.0
-        self.sweep_speed = max(0.0, min(60.0, self.sweep_speed))
-
-        self.draw_cluster_view(display_speed=self.sweep_speed, sweep_mode=True)
+        self.draw_cluster_view(display_speed=max(0.0, min(60.0, self.sweep_speed)), sweep_mode=True)
 
     def draw_cluster_view(self, display_speed: float, sweep_mode: bool = False):
-        """Draws the main live instrument cluster."""
         self.screen.fill(BG_COLOR)
+        center_x, center_y = self.width // 2, self.height // 2
 
-        # Header Badges
-        dbw_color = ACCENT_GREEN if self.dbw_active or sweep_mode else TEXT_MUTED
-        dbw_text = "● DBW AUTO ACTIVE" if (self.dbw_active or sweep_mode) else "○ MANUAL MODE"
-        dbw_surf = self.font_small.render(dbw_text, True, dbw_color)
-        self.screen.blit(dbw_surf, (35, 25))
-
-        # Center OEM Branding Badge
-        brand_surf = self.font_tiny.render("ECLIPSE SDV  |  INFOSYS  |  KLE TECH", True, TEXT_MUTED)
-        self.screen.blit(brand_surf, (self.width // 2 - brand_surf.get_width() // 2, 25))
-
-        # Speedometer Gauge (Center)
-        center_x, center_y, radius = self.width // 2, self.height // 2 - 20, 160
-        pygame.draw.circle(self.screen, PANEL_COLOR, (center_x, center_y), radius)
-        pygame.draw.circle(self.screen, (35, 45, 65), (center_x, center_y), radius, 4)
-
-        # Arc
+        # Ultra-Minimalist Speed Arc
+        radius = 180
+        start_angle = math.radians(140)
         max_speed = 60.0
         fraction = min(1.0, display_speed / max_speed)
-        start_angle = math.radians(135)
-        sweep = math.radians(270 * fraction)
+        sweep = math.radians(260 * fraction)
         end_angle = start_angle + sweep
 
-        arc_points = []
-        for a in range(int(math.degrees(start_angle)), int(math.degrees(end_angle)) + 1, 3):
-            rad = math.radians(a)
-            px = center_x + int((radius - 12) * math.cos(rad))
-            py = center_y + int((radius - 12) * math.sin(rad))
-            arc_points.append((px, py))
+        # Background track
+        pygame.draw.arc(self.screen, (30, 30, 30), (center_x - radius, center_y - radius, radius*2, radius*2), -math.radians(400), -math.radians(140), 2)
+        
+        # Active speed track
+        if fraction > 0:
+            arc_points = []
+            for a in range(int(math.degrees(start_angle)), int(math.degrees(end_angle)) + 1, 2):
+                rad = math.radians(a)
+                px = center_x + int(radius * math.cos(rad))
+                py = center_y + int(radius * math.sin(rad))
+                arc_points.append((px, py))
+            if len(arc_points) > 1:
+                pygame.draw.lines(self.screen, ACCENT_BLUE, False, arc_points, 4)
+                # Glow dot
+                pygame.draw.circle(self.screen, ACCENT_CYAN, arc_points[-1], 6)
 
-        if len(arc_points) > 1:
-            pygame.draw.lines(self.screen, ACCENT_BLUE if not sweep_mode else ACCENT_CYAN, False, arc_points, 8)
-
-        # Speed Value
+        # Huge Sleek Speed Text
         val_surf = self.font_huge.render(f"{int(round(display_speed))}", True, TEXT_WHITE)
-        unit_surf = self.font_small.render("km/h", True, ACCENT_BLUE)
-        self.screen.blit(val_surf, (center_x - val_surf.get_width() // 2, center_y - 50))
-        self.screen.blit(unit_surf, (center_x - unit_surf.get_width() // 2, center_y + 30))
+        unit_surf = self.font_medium.render("km/h", True, TEXT_MUTED)
+        self.screen.blit(val_surf, (center_x - val_surf.get_width() // 2, center_y - 60))
+        self.screen.blit(unit_surf, (center_x - unit_surf.get_width() // 2, center_y + 60))
 
-        # Battery Panel (Left)
-        self.draw_battery_panel(50, self.height // 2 - 60, 240, 100)
-
-        # Gear Selector (Bottom Center)
-        self.draw_gear_selector(self.width // 2, self.height // 2 + 160)
-
-        # Warning Self-Test / E-Stop Banner
-        if self.estop_active and not sweep_mode:
-            banner_rect = pygame.Rect(0, self.height - 50, self.width, 50)
-            pygame.draw.rect(self.screen, ACCENT_RED, banner_rect)
-            warn_surf = self.font_medium.render("⚠ EMERGENCY STOP SWITCH ENGAGED - DRIVE INHIBITED ⚠", True, TEXT_WHITE)
-            self.screen.blit(warn_surf, (self.width // 2 - warn_surf.get_width() // 2, self.height - 40))
-
-        # OTA Update Prompt
-        if self.ota_installing:
-            banner_rect = pygame.Rect(0, self.height - 50, self.width, 50)
-            pygame.draw.rect(self.screen, (0, 122, 255), banner_rect)
-            warn_surf = self.font_medium.render("⬇ INSTALLING SOFTWARE UPDATE... DO NOT TURN OFF VEHICLE ⬇", True, TEXT_WHITE)
-            self.screen.blit(warn_surf, (self.width // 2 - warn_surf.get_width() // 2, self.height - 40))
-        elif self.ota_available and not sweep_mode:
-            banner_rect = pygame.Rect(0, self.height - 50, self.width, 50)
-            pygame.draw.rect(self.screen, (255, 171, 0), banner_rect)
-            warn_surf = self.font_medium.render("⭐ NEW OTA UPDATE AVAILABLE. PRESS [ENTER] TO INSTALL ⭐", True, (10, 14, 22))
-            self.screen.blit(warn_surf, (self.width // 2 - warn_surf.get_width() // 2, self.height - 40))
-
-    def draw_battery_panel(self, x: int, y: int, w: int, h: int):
-        pygame.draw.rect(self.screen, PANEL_COLOR, (x, y, w, h), border_radius=12)
-        pygame.draw.rect(self.screen, (35, 45, 65), (x, y, w, h), 2, border_radius=12)
-
-        title = self.font_tiny.render("TRACTION BATTERY", True, TEXT_MUTED)
-        self.screen.blit(title, (x + 18, y + 15))
-
-        val_color = ACCENT_GREEN if self.battery_soc > 20 else ACCENT_RED
-        val_surf = self.font_medium.render(f"{self.battery_soc:.1f}%", True, val_color)
-        self.screen.blit(val_surf, (x + w - val_surf.get_width() - 18, y + 15))
-
-        # Bar
-        bar_x, bar_y, bar_w, bar_h = x + 18, y + 55, w - 36, 20
-        pygame.draw.rect(self.screen, (25, 32, 46), (bar_x, bar_y, bar_w, bar_h), border_radius=6)
-        fill_w = int((self.battery_soc / 100.0) * bar_w)
+        # Minimalist Battery Bar (Bottom Center)
+        bat_w = 120
+        bat_h = 4
+        bat_x = center_x - bat_w // 2
+        bat_y = center_y + 110
+        pygame.draw.rect(self.screen, (30, 30, 30), (bat_x, bat_y, bat_w, bat_h), border_radius=2)
+        fill_w = int((self.battery_soc / 100.0) * bat_w)
+        bat_color = ACCENT_GREEN if self.battery_soc > 20 else ACCENT_RED
         if fill_w > 0:
-            pygame.draw.rect(self.screen, val_color, (bar_x, bar_y, fill_w, bar_h), border_radius=6)
+            pygame.draw.rect(self.screen, bat_color, (bat_x, bat_y, fill_w, bat_h), border_radius=2)
+        
+        bat_text = self.font_small.render(f"{self.battery_soc:.0f}%", True, TEXT_MUTED)
+        self.screen.blit(bat_text, (center_x - bat_text.get_width() // 2, bat_y + 10))
 
-    def draw_gear_selector(self, center_x: int, y: int):
+        # Sleek Gear Selector (Left)
         gears = [("R", -1), ("N", 0), ("D", 1)]
-        start_x = center_x - (len(gears) * 60) // 2
         for i, (lbl, val) in enumerate(gears):
-            gx = start_x + i * 60
+            gy = center_y - 40 + (i * 40)
             active = (self.gear == val)
-            pygame.draw.rect(self.screen, (0, 90, 50) if active else PANEL_COLOR, (gx, y, 48, 48), border_radius=8)
-            pygame.draw.rect(self.screen, ACCENT_GREEN if active else (40, 50, 70), (gx, y, 48, 48), 2 if active else 1, border_radius=8)
-            txt = self.font_medium.render(lbl, True, ACCENT_GREEN if active else TEXT_MUTED)
-            self.screen.blit(txt, (gx + 24 - txt.get_width() // 2, y + 24 - txt.get_height() // 2))
+            color = TEXT_WHITE if active else (50, 50, 50)
+            txt = self.font_medium.render(lbl, True, color)
+            self.screen.blit(txt, (center_x - 260, gy))
+            if active:
+                pygame.draw.circle(self.screen, ACCENT_BLUE, (center_x - 280, gy + 12), 4)
+
+        # Brand / Mode (Right)
+        brand_surf = self.font_small.render("ECLIPSE SDV", True, (80, 80, 80))
+        self.screen.blit(brand_surf, (center_x + 220, center_y - 40))
+        
+        dbw_color = ACCENT_CYAN if (self.dbw_active or sweep_mode) else TEXT_MUTED
+        dbw_text = "AUTO" if (self.dbw_active or sweep_mode) else "MANUAL"
+        dbw_surf = self.font_small.render(dbw_text, True, dbw_color)
+        self.screen.blit(dbw_surf, (center_x + 220, center_y))
+
+        # Warnings & OTA (Bottom)
+        if self.estop_active and not sweep_mode:
+            pygame.draw.rect(self.screen, ACCENT_RED, (0, self.height - 40, self.width, 40))
+            warn = self.font_small.render("EMERGENCY STOP ENGAGED", True, (0,0,0))
+            self.screen.blit(warn, (center_x - warn.get_width() // 2, self.height - 30))
+        elif self.ota_installing:
+            pygame.draw.rect(self.screen, ACCENT_BLUE, (0, self.height - 40, self.width, 40))
+            warn = self.font_small.render("INSTALLING UPDATE...", True, (0,0,0))
+            self.screen.blit(warn, (center_x - warn.get_width() // 2, self.height - 30))
+        elif self.ota_available and not sweep_mode:
+            pygame.draw.rect(self.screen, TEXT_WHITE, (0, self.height - 40, self.width, 40))
+            warn = self.font_small.render("UPDATE AVAILABLE • PRESS [ENTER]", True, (0,0,0))
+            self.screen.blit(warn, (center_x - warn.get_width() // 2, self.height - 30))
 
     def run(self):
         while self.is_running:
@@ -259,24 +232,18 @@ class NativeDigitalCluster:
                     if self.ota_available and not self.ota_installing:
                         self.ota_installing = True
                         try:
-                            # Approve OTA over the local API
                             req = urllib.request.Request(self.vehicle_api_url.replace("/telemetry", "/ota/approve"), method="POST")
                             req.add_header('Content-Type', 'application/json')
                             urllib.request.urlopen(req, data=b'{}', timeout=1.0)
-                        except Exception as e:
-                            print(f"OTA approval failed: {e}")
+                        except:
+                            pass
 
-            now = time.time()
-            elapsed = now - self.boot_start_time
-
+            elapsed = time.time() - self.boot_start_time
             if elapsed < 2.5:
-                # 1. Startup Splash (Eclipse, Infosys, KLE Tech)
                 self.draw_startup_splash(elapsed)
             elif elapsed < 4.0:
-                # 2. Needle Sweep Self-Test
                 self.draw_needle_sweep(elapsed)
             else:
-                # 3. Live 60 FPS Cluster
                 self.draw_cluster_view(display_speed=self.speed_kmh, sweep_mode=False)
 
             pygame.display.flip()
