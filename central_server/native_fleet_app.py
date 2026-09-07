@@ -3,7 +3,7 @@
 Native Desktop GUI App for Jetson Hub Fleet Manager.
 Runs as a standalone desktop application window (No web browser required).
 """
-import tkinter as tk
+import sys\nimport tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 import urllib.request
 import urllib.request
@@ -40,9 +40,9 @@ class FleetManagerApp:
         action_frame = tk.Frame(root, bg="#2E3440")
         action_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
         
-        btn_ota = tk.Button(action_frame, text="🚀 PUSH OTA UPDATE TO SELECTED VEHICLE", 
+        btn_ota = tk.Button(action_frame, text="🚀 BROADCAST OTA TO ENTIRE FLEET", 
                            bg="#5E81AC", fg="white", font=("Arial", 11, "bold"), 
-                           command=self.push_ota_to_selected, relief=tk.FLAT, padx=15, pady=5)
+                           command=self.push_ota_to_fleet, relief=tk.FLAT, padx=15, pady=5)
         btn_ota.pack(side=tk.RIGHT)
         
         btn_diag = tk.Button(action_frame, text="🚨 RUN REMOTE DIAGNOSTICS (OpenSOVD)", 
@@ -98,23 +98,25 @@ class FleetManagerApp:
         except Exception as e:
             messagebox.showerror("Network Error", f"Could not reach OpenSOVD API: {e}")
 
-    def push_ota_to_selected(self):
-        selected = self.tree.selection()
-        if not selected:
-            messagebox.showwarning("No Selection", "Please select a vehicle from the table first.")
+    def push_ota_to_fleet(self):
+        all_items = self.tree.get_children()
+        if not all_items:
+            messagebox.showwarning("Empty Fleet", "No vehicles are currently online in the fleet.")
             return
             
-        item = self.tree.item(selected[0])
-        vehicle_id = item['values'][1]  # Vehicle ID is the second column
-        
         import subprocess
         import os
         try:
-            # We call the external python script so we don't have to import zenoh globally if it's missing on the UI thread
             repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             script = os.path.join(repo_dir, "central_server", "push_ota.py")
-            subprocess.Popen([sys.executable, script, vehicle_id])
-            messagebox.showinfo("Zenoh OTA Broadcast", f"OTA signal securely broadcasted to the cloud topic for {vehicle_id} (No IP required!).\n\nThe vehicle will pick it up automatically.")
+            
+            sent_count = 0
+            for item in all_items:
+                vehicle_id = self.tree.item(item)['values'][1]
+                subprocess.Popen([sys.executable, script, vehicle_id])
+                sent_count += 1
+                
+            messagebox.showinfo("Fleet-Wide OTA Broadcast", f"🚀 OTA signal securely broadcasted to all {sent_count} vehicles in the fleet!\n\nEvery vehicle will simultaneously receive the prompt to update.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to run Zenoh broadcast: {e}")
 
