@@ -28,7 +28,23 @@ fi
 echo "======================================================="
 echo "=== [2/5] Setting up Priority Systemd Auto-Run      ==="
 echo "======================================================="
-sudo cp "$(pwd)/deployment/systemd/sdv-vehicle-autorun.service" /etc/systemd/system/ 2>/dev/null || true
+sudo bash -c "cat << 'SVC_EOF' > /etc/systemd/system/sdv-vehicle-autorun.service
+[Unit]
+Description=Eclipse SDV Autonomous Vehicle Stack (Auto-Run on Boot)
+After=network.target
+
+[Service]
+User=$USER
+WorkingDirectory=$(pwd)
+ExecStart=/usr/bin/python3 $(pwd)/vehicle_runtime/vehicle_stack.py $(pwd)/config/vss_mapping.yaml
+Restart=always
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+SVC_EOF"
+
 sudo systemctl daemon-reload 2>/dev/null || true
 sudo systemctl enable sdv-vehicle-autorun 2>/dev/null || true
 
