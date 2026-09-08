@@ -74,33 +74,43 @@ class GenericCanAdapter(BaseVehicleAdapter):
             # Match Proprietary B - General Status
             # The PDF manual says PGN: "0x1291 0109". This could be a full 29-bit ID (0x12910109) 
             # or a J1939 PGN (0x1291). We check all possibilities to be bulletproof.
+            # Strict match for exactly 0x1291 or any J1939 with PGN 1291
             pgn = (can_id >> 8) & 0x3FFFF
-            if can_id == 0x1291 or can_id == 0x12910109 or pgn == 0x1291:
-                # B0 - Drive Mode (0x01=Forward, 0x03=Reverse, 0x00=Neutral)
-                d_mode = data[0]
-                if d_mode == 0x01:
-                    self.latest_vss["Vehicle.Powertrain.Transmission.CurrentGear"] = 1
-                    self.latest_vss["Vehicle.Powertrain.Transmission.DriveMode"] = "DRIVE"
-                elif d_mode == 0x03:
-                    self.latest_vss["Vehicle.Powertrain.Transmission.CurrentGear"] = -1
-                    self.latest_vss["Vehicle.Powertrain.Transmission.DriveMode"] = "REVERSE"
+            
+            # Mask just the hex string to see if it literally ends in 1291 for weird cases
+            hex_id_str = hex(can_id)
+            
+            if can_id == 0x1291 or can_id == 0x12910109 or pgn == 0x1291 or hex_id_str.endswith("1291"):
+                # Avoid overwriting with blank multiplexed frames. If byte 0 is 0 and byte 5 is 0, ignore.
+                if data[0] == 0x00 and data[5] == 0x00 and data[6] == 0x00:
+                    pass
                 else:
-                    self.latest_vss["Vehicle.Powertrain.Transmission.CurrentGear"] = 0
-                    self.latest_vss["Vehicle.Powertrain.Transmission.DriveMode"] = "NEUTRAL"
+                    # B0 - Drive Mode (0x01=Forward, 0x03=Reverse, 0x00=Neutral)
+                    d_mode = data[0]
+                    if d_mode == 0x01:
+                        self.latest_vss["Vehicle.Powertrain.Transmission.CurrentGear"] = 1
+                        self.latest_vss["Vehicle.Powertrain.Transmission.DriveMode"] = "DRIVE"
+                    elif d_mode == 0x03:
+                        self.latest_vss["Vehicle.Powertrain.Transmission.CurrentGear"] = -1
+                        self.latest_vss["Vehicle.Powertrain.Transmission.DriveMode"] = "REVERSE"
+                    else:
+                        self.latest_vss["Vehicle.Powertrain.Transmission.CurrentGear"] = 0
+                        self.latest_vss["Vehicle.Powertrain.Transmission.DriveMode"] = "NEUTRAL"
+                        
+                    # B4 - Vehicle Status Flags
+                    status_bits = data[4]
+                    self.latest_vss["Vehicle.AutomatedDriving.IsActive"] = bool(status_bits & 0x01)
+                    self.latest_vss["Vehicle.Safety.EStopActive"] = bool(status_bits & 0x10)
                     
-                # B4 - Vehicle Status Flags
-                status_bits = data[4]
-                self.latest_vss["Vehicle.AutomatedDriving.IsActive"] = bool(status_bits & 0x01)
-                self.latest_vss["Vehicle.Safety.EStopActive"] = bool(status_bits & 0x10)
-                
-                # B5 - Battery Percentage
-                self.latest_vss["Vehicle.Powertrain.TractionBattery.StateOfCharge.Current"] = float(data[5])
-                
-                # B6-B7 - Vehicle Speed in mps (Speed * 0.01). Convert to km/h!
-                # LSB is B6, MSB is B7
-                speed_raw = data[6] | (data[7] << 8)
-                speed_mps = speed_raw * 0.01
-                self.latest_vss["Vehicle.Speed"] = speed_mps * 3.6
+                    # B5 - Battery Percentage
+                    # Only update if it's non-zero or seems reasonable to avoid blank frames zeroing it
+                    if data[5] != 0:
+                        self.latest_vss["Vehicle.Powertrain.TractionBattery.StateOfCharge.Current"] = float(data[5])
+                    
+                    # B6-B7 - Vehicle Speed in mps (Speed * 0.01). Convert to km/h!
+                    speed_raw = data[6] | (data[7] << 8)
+                    speed_mps = speed_raw * 0.01
+                    self.latest_vss["Vehicle.Speed"] = speed_mps * 3.6
                 
         except socket.timeout:
             pass
