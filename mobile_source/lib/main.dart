@@ -13,7 +13,7 @@ class SDVApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Virya Digital Key',
+      title: 'SDV Digital Key',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF0A0E17),
@@ -61,7 +61,7 @@ class _BootScreenState extends State<BootScreen> {
           children: const [
             Icon(Icons.electric_car, size: 80, color: Color(0xFF0070F3)),
             SizedBox(height: 20),
-            Text('VIRYA APM', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 4)),
+            Text('ECLIPSE SDV', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 4)),
             SizedBox(height: 10),
             CircularProgressIndicator(color: Color(0xFF0070F3)),
           ],
@@ -443,7 +443,7 @@ class _MainDashboardState extends State<MainDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('VIRYA APM', style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold)),
+        title: const Text('ECLIPSE SDV', style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
