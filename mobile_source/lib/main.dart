@@ -98,10 +98,10 @@ class _PairingScreenState extends State<PairingScreen> with SingleTickerProvider
   Future<void> _pair() async {
     setState(() => _isConnecting = true);
     String url = _urlController.text.trim();
-    if (!url.startsWith('http')) url = 'http://\$url';
+    if (!url.startsWith('http')) url = 'http://' + url;
     
     try {
-      final res = await http.get(Uri.parse('\$url/api/telemetry')).timeout(const Duration(seconds: 5));
+      final res = await http.get(Uri.parse(url + '/api/telemetry')).timeout(const Duration(seconds: 5));
       if (res.statusCode == 200) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('vehicle_url', url);
@@ -132,7 +132,7 @@ class _PairingScreenState extends State<PairingScreen> with SingleTickerProvider
             const SizedBox(height: 40),
             const Text('Pair Your Vehicle', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            const Text('Enter your vehicle\\'s Cloudflare Tunnel URL or IP to establish a persistent global connection.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+            const Text("Enter your vehicle's Cloudflare Tunnel URL or IP to establish a persistent global connection.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
             const SizedBox(height: 40),
             TextField(
               controller: _urlController,
@@ -197,7 +197,7 @@ class _MainDashboardState extends State<MainDashboard> {
   void _startTelemetry() {
     _telemetryTimer = Timer.periodic(const Duration(milliseconds: 1000), (timer) async {
       try {
-        final res = await http.get(Uri.parse('\${widget.vehicleUrl}/api/telemetry')).timeout(const Duration(milliseconds: 800));
+        final res = await http.get(Uri.parse(widget.vehicleUrl + '/api/telemetry')).timeout(const Duration(milliseconds: 800));
         if (res.statusCode == 200) {
           final data = json.decode(res.body);
           setState(() {
@@ -207,8 +207,7 @@ class _MainDashboardState extends State<MainDashboard> {
           });
         }
         
-        // Check OTA Status
-        final otaRes = await http.get(Uri.parse('\${widget.vehicleUrl}/api/ota/status')).timeout(const Duration(milliseconds: 800));
+        final otaRes = await http.get(Uri.parse(widget.vehicleUrl + '/api/ota/status')).timeout(const Duration(milliseconds: 800));
         if (otaRes.statusCode == 200) {
           final otaData = json.decode(otaRes.body);
           if (otaData['update_available'] == true && !pendingOta) {
@@ -234,7 +233,6 @@ class _MainDashboardState extends State<MainDashboard> {
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              // Leave pendingOta = true so they can update later
             },
             child: const Text('Update Later', style: TextStyle(color: Colors.grey)),
           ),
@@ -254,7 +252,7 @@ class _MainDashboardState extends State<MainDashboard> {
   Future<void> _triggerOtaInstall() async {
     try {
       await http.post(
-        Uri.parse('\${widget.vehicleUrl}/api/ota/trigger'),
+        Uri.parse(widget.vehicleUrl + '/api/ota/trigger'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({"target_version": "v2.0-App"}),
       );
@@ -276,7 +274,7 @@ class _MainDashboardState extends State<MainDashboard> {
 
   Future<void> _fetchDiagnostics() async {
     try {
-      final res = await http.get(Uri.parse('\${widget.vehicleUrl}/api/diagnostics/dtc'));
+      final res = await http.get(Uri.parse(widget.vehicleUrl + '/api/diagnostics/dtc'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         setState(() {
@@ -284,7 +282,6 @@ class _MainDashboardState extends State<MainDashboard> {
         });
       }
     } catch (e) {
-      // Use fake logs if offline or fails
       setState(() {
          dtcLogs = [
            {"code": "P0A7F", "module": "BMS", "description": "Traction Battery Pack Deterioration"},
@@ -321,12 +318,11 @@ class _MainDashboardState extends State<MainDashboard> {
             children: [
               const Icon(Icons.battery_charging_full, color: Color(0xFF00CC66)),
               const SizedBox(width: 10),
-              Text('\$battery%', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(battery + '%', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             ],
           ),
         ),
         const Spacer(),
-        // Engine Lock/Unlock Switch with effects
         GestureDetector(
           onTap: () {
             setState(() => isEngineOn = !isEngineOn);
@@ -387,7 +383,7 @@ class _MainDashboardState extends State<MainDashboard> {
                       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                       child: ListTile(
                         leading: const Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                        title: Text('\${log["code"]} - \${log["module"]}'),
+                        title: Text(log["code"] + ' - ' + log["module"]),
                         subtitle: Text(log["description"]),
                       ),
                     );
