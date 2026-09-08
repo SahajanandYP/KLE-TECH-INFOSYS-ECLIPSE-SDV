@@ -28,6 +28,10 @@ jobs:
           flutter create sdv_app --platforms=android
           cp mobile_source/pubspec.yaml sdv_app/pubspec.yaml
           cp mobile_source/lib/main.dart sdv_app/lib/main.dart
+          
+          # Inject Android Internet & Cleartext Permissions for Release Build
+          sed -i 's/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android">/<manifest xmlns:android="http:\/\/schemas.android.com\/apk\/res\/android">\n    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"\/>/g' sdv_app/android/app/src/main/AndroidManifest.xml
+          sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' sdv_app/android/app/src/main/AndroidManifest.xml
 
       - name: Build APK
         run: |
