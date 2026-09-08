@@ -8,7 +8,7 @@ import sys
 
 # --- CONFIGURATION ---
 API_URL = "http://localhost:5000"
-os.environ["DISPLAY"] = ":0"
+# os.environ["DISPLAY"] = ":0"  # Removed to support Wayland/:1
 
 # --- COLORS (Cyberpunk / Next-Gen EV Theme) ---
 BG_COLOR = (11, 15, 25)
