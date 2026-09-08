@@ -1,0 +1,42 @@
+name: Build Mobile APK
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'mobile_app_flutter/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.2'
+          channel: 'stable'
+
+      - name: Install Dependencies
+        run: |
+          cd mobile_app_flutter
+          flutter pub get
+
+      - name: Build APK
+        run: |
+          cd mobile_app_flutter
+          flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Eclipse-SDV-App
+          path: mobile_app_flutter/build/app/outputs/flutter-apk/app-release.apk
