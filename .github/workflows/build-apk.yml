@@ -3,8 +3,6 @@ name: Build Mobile APK
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'mobile_app_flutter/**'
   workflow_dispatch:
 
 jobs:
@@ -25,18 +23,20 @@ jobs:
           flutter-version: '3.24.2'
           channel: 'stable'
 
-      - name: Install Dependencies
+      - name: Generate Project Scaffolding
         run: |
-          cd mobile_app_flutter
-          flutter pub get
+          flutter create sdv_app --platforms=android
+          cp mobile_source/pubspec.yaml sdv_app/pubspec.yaml
+          cp mobile_source/lib/main.dart sdv_app/lib/main.dart
 
       - name: Build APK
         run: |
-          cd mobile_app_flutter
+          cd sdv_app
+          flutter pub get
           flutter build apk --release
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Eclipse-SDV-App
-          path: mobile_app_flutter/build/app/outputs/flutter-apk/app-release.apk
+          name: Virya-Digital-Key-App
+          path: sdv_app/build/app/outputs/flutter-apk/app-release.apk
